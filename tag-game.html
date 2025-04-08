@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D Tag Game</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { background: #222; display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const playerSize = 40;
+    const speed = 4;
+
+    let player1 = { x: 100, y: 100, color: "blue", isIt: true, score: 0 };
+    let player2 = { x: 600, y: 400, color: "green", isIt: false, score: 0 };
+
+    const keys = {};
+
+    const walls = [
+      { x: 200, y: 150, width: 400, height: 20 },
+      { x: 200, y: 430, width: 400, height: 20 },
+      { x: 100, y: 250, width: 20, height: 100 },
+      { x: 680, y: 250, width: 20, height: 100 },
+    ];
+
+    window.addEventListener("keydown", (e) => keys[e.key] = true);
+    window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+    function movePlayer(player, dx, dy) {
+      const newX = player.x + dx;
+      const newY = player.y + dy;
+      const playerRect = { x: newX, y: newY, width: playerSize, height: playerSize };
+
+      const collides = walls.some(w => isColliding(playerRect, w));
+
+      if (!collides) {
+        player.x = newX;
+        player.y = newY;
+      }
+    }
+
+    function isColliding(a, b) {
+      return a.x < b.x + b.width &&
+             a.x + a.width > b.x &&
+             a.y < b.y + b.height &&
+             a.y + a.height > b.y;
+    }
+
+    function updatePlayerMovement() {
+      // Player 1 - WASD
+      if (keys["w"]) movePlayer(player1, 0, -speed);
+      if (keys["s"]) movePlayer(player1, 0, speed);
+      if (keys["a"]) movePlayer(player1, -speed, 0);
+      if (keys["d"]) movePlayer(player1, speed, 0);
+
+      // Player 2 - Arrow keys
+      if (keys["ArrowUp"]) movePlayer(player2, 0, -speed);
+      if (keys["ArrowDown"]) movePlayer(player2, 0, speed);
+      if (keys["ArrowLeft"]) movePlayer(player2, -speed, 0);
+      if (keys["ArrowRight"]) movePlayer(player2, speed, 0);
+    }
+
+    function detectTag() {
+      const dx = player1.x - player2.x;
+      const dy = player1.y - player2.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < playerSize) {
+        if (player1.isIt) {
+          player1.isIt = false;
+          player2.isIt = true;
+        } else {
+          player1.isIt = true;
+          player2.isIt = false;
+        }
+      }
+    }
+
+    function updateScores() {
+      if (player1.isIt) {
+        player1.score++;
+      } else {
+        player2.score++;
+      }
+    }
+
+    function drawPlayer(player) {
+      ctx.fillStyle = player.isIt ? "red" : player.color;
+      ctx.fillRect(player.x, player.y, playerSize, playerSize);
+    }
+
+    function drawMap() {
+      ctx.fillStyle = "gray";
+      walls.forEach(w => ctx.fillRect(w.x, w.y, w.width, w.height));
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      updatePlayerMovement();
+      detectTag();
+      updateScores();
+
+      drawMap();
+      drawPlayer(player1);
+      drawPlayer(player2);
+
+      ctx.fillStyle = "white";
+      ctx.font = "20px Arial";
+      ctx.fillText(`P1 Score: ${player1.score}`, 20, 30);
+      ctx.fillText(`P2 Score: ${player2.score}`, 20, 60);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
